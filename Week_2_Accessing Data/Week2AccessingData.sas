@@ -179,6 +179,7 @@ libname mylib clear;
 * You can copy the path shown there.
 
 *libname mylib base "s:/workshop/data";
+
 run;
 
 libname PG1 base "s:/home/u48576857/EPG194/data";
