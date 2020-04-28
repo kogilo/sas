@@ -1,0 +1,25 @@
+
+
+```{r libload} 
+library(SASmarkdown)
+```
+
+```{r setup} 
+library(SASmarkdown)
+```
+
+
+```{sas ex-sas} 
+data myclass;
+    set sashelp.class;
+run;
+```
+
+
+```{sas ex-sas} 
+proc print data = myclass;
+run;
+```
+
+
+
