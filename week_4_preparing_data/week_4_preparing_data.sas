@@ -783,10 +783,98 @@ run;
 
 
 
+***********************************************************;
+*  Demo                                                   *;
+*       Modify the IF-THEN statements to use IF-THEN/DO   *;
+*       syntax to write rows to either the indian,        *;
+*       atlantic, or pacific table based on the value of  *;
+*       Ocean. Highlight the DATA step and run the        *;
+*       selected code.                                    *;
+***********************************************************;
+
+data indian atlantic pacific;
+	set pg1.storm_summary;
+	length Ocean $ 8;
+	keep Basin Season Name MaxWindMPH Ocean;
+	Basin=upcase(Basin);
+	OceanCode=substr(Basin,2,1);
+	*Modify the program to use IF-THEN-DO syntax;
+	if OceanCode="I" then do;
+        Ocean="Indian" ;
+        output indian;
+    end;
+	else if OceanCode="A" then do;
+        Ocean="Atlantic";
+        output atlantic;
+    end;
+	else do;
+        Ocean="Pacific";
+         output pacific;
+    end;
+run;
 
 
 
+***********************************************************;
+*  LESSON 4, PRACTICE 7                                   *;
+*    a) Submit the program and view the generated output. *;
+*    b) In the DATA step, use IF-THEN/ELSE statements to  *;
+*       create a new column, ParkType, based on the value *;
+*       of Type.                                          *;
+*       NM -> Monument                                    *;
+*       NP -> Park                                        *;
+*       NPRE, PRE, or PRESERVE -> Preserve                *;
+*       NS -> Seashore                                    *;
+*       RVR or RIVERWAYS -> River                         *;
+*    c) Modify the PROC FREQ step to generate a frequency *;
+*       report for ParkType.                              *;
+***********************************************************;
 
+data park_type;
+    set pg1.np_summary;
+    length ParkType $ 8;
+    if Type='NM' then ParkType='Monument';
+    else if Type='NP' then ParkType='Park';
+    else if Type in ('NPRE', 'PRE', 'PRESERVE') then
+        ParkType='Preserve';
+    else if Type in ('RVR', 'RIVERWAYS') then ParkType='River';
+    else if Type='NS' then ParkType='Seashore';
+run;
+
+proc freq data=park_type;
+    tables ParkType;
+run;
+
+
+
+* Level 2 Practice: Processing Statements Conditionally with DO Groups;
+* Reminder: If you restarted your SAS session, you must run the libname.sas program in the EPG194 folder.
+
+* Write a DATA step to create two temporary tables, named parks and monuments, that are based on the pg1.np_summary table. Read only national parks or monuments from the input table. (Type is either NP or NM.)
+* Create a new column named Campers that is the sum of all columns that contain counts of campers. Format the column to include commas.
+* When Type is NP, create a new column named ParkType that is equal to Park, and write the row to the parks table. When Type is NM, assign ParkType as Monument and write the row to the monuments table.
+* Keep Reg, ParkName, DayVisits, OtherLodging, Campers, and ParkType in both output tables.
+* Submit the program and view the output data.
+* Which table has the most rows?;
+
+
+data parks monuments;
+    set pg1.np_summary;
+    where type in ('NM', 'NP');
+    Campers=sum(OtherCamping, TentCampers, RVCampers,
+                BackcountryCampers);
+    format Campers comma17.;
+    length ParkType $ 8;
+    if type='NP' then do;
+        ParkType='Park';
+        output parks;
+    end;
+    else do;
+        ParkType='Monument';
+        output monuments;
+    end;
+    keep Reg ParkName DayVisits OtherLodging Campers ParkType;
+run;
 
 
 
