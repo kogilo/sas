@@ -644,14 +644,145 @@ run;
 
 
 
-title1 'Weather Statistics by Year and Park';
-proc means data=pg1.np_westweather mean min max maxdec=2;
-    var Name Year;
-    class Year Name;
+
+
+* Level 2 Practice: Creating an Output Table with Custom Columns
+* TOTAL POINTS 2
+
+* The pg1.np_westweather table contains weather-related information for four national parks: Death Valley National Park, Grand Canyon National Park, Yellowstone National Park, and Zion National Park. Use the MEANS procedure to analyze the data in this table.
+
+* Reminder: If you restarted your SAS session, you must run the libname.sas program in the EPG194 folder.
+
+* Open a new program window and write a PROC MEANS step to analyze rows from pg1.np_westweather.
+* Exclude rows where values for Precip are equal to 0.
+* Analyze precipitation amounts grouped by Name and Year.
+* Create only an output table, named rainstats, with columns for the N and SUM statistics.
+* Name the columns RainDays and TotalRain, respectively.
+* Keep only those rows that are the combination of Year and Name.
+* Submit the program and view the output data.
+* How many rows are in work.rainstats?;
+
+
+
+proc means data=pg1.np_westweather noprint;
     where Precip ne 0;
+    var Precip;
+    class Name Year;
+    ways 2;
+    output out=rainstats n=RainDays sum=TotalRain;
 run;
 
 
+* Write a PROC PRINT step to print the rainstats table.
+* Suppress the printing of observation numbers, and display column labels.
+* Display the columns in the following order: Name, Year, RainDays, and TotalRain.
+* Label Name as Park Name, RainDays as Number of Days Raining, and TotalRain as Total Rain Amount (inches).
+* Use Rain Statistics by Year and Park as the report title.
+* Submit the program and review the results.
+* What is the Total Rain Amount (inches) value in row one?;
+
+title1 'Rain Statistics by Year and Park';
+proc print data=rainstats label noobs;
+    var Name Year RainDays TotalRain;
+    label Name='Park Name'
+          RainDays='Number of Days Raining'
+          TotalRain='Total Rain Amount (inches)';
+run;
+title;
+
+
+
+* If necessary, start SAS Studio. Run a program to see examples of other procedures that analyze and report on the data.
+
+* Open p105a08.sas from the activities folder.
+* Run the program and examine the results.
+* Note: The map is created using the SGMAP procedure, which requires SAS 9.4M5 or later.;
+
+**************************************************;
+*  Activity 5.08                                 *;
+*    Run the program and examine the results to  *;
+*    see examples of other procedures that       *;
+*    analyze and report on the data.             *;
+**************************************************;
+
+%let Year=2016;
+%let basin=NA;
+
+**************************************************;
+*  Creating a Map with PROC SGMAP                *;
+*   Requires SAS 9.4M5 or later                  *;
+**************************************************;
+
+*Preparing the data for map labels;
+data map;
+	set pg1.storm_final;
+	length maplabel $ 20;
+	where season=&year and basin="&basin";
+	if maxwindmph<100 then MapLabel=" ";
+	else maplabel=cats(name,"-",maxwindmph,"mph");
+	keep lat lon maplabel maxwindmph;
+run;
+
+*Creating the map;
+title1 "Tropical Storms in &year Season";
+title2 "Basin=&basin";
+footnote1 "Storms with MaxWind>100mph are labeled";
+
+proc sgmap plotdata=map;
+    *openstreetmap;
+    esrimap url='http://services.arcgisonline.com/arcgis/rest/services/World_Physical_Map';
+            bubble x=lon y=lat size=maxwindmph / datalabel=maplabel datalabelattrs=(color=red size=8);
+run;
+title;footnote;
+
+**************************************************;
+*  Creating a Bar Chart with PROC SGPLOT         *;
+**************************************************;
+title "Number of Storms in &year";
+proc sgplot data=pg1.storm_final;
+	where season=&year;
+	vbar BasinName / datalabel dataskin=matte categoryorder=respdesc;
+	xaxis label="Basin";
+	yaxis label="Number of Storms";
+run;
+
+**************************************************;
+*  Creating a Line PLOT with PROC SGPLOT         *;
+**************************************************;
+title "Number of Storms By Season Since 2010";
+proc sgplot data=pg1.storm_final;
+	where Season>=2010;
+	vline Season / group=BasinName lineattrs=(thickness=2);
+	yaxis label="Number of Storms";
+	xaxis label="Basin";
+run;
+
+**************************************************;
+*  Creating a Report with PROC TABULATE          *;
+**************************************************;
+
+proc format;
+    value count 25-high="lightsalmon";
+    value maxwind 90-high="lightblue";
+run;
+
+title "Storm Summary since 2000";
+footnote1 "Storm Counts 25+ Highlighted";
+footnote2 "Max Wind 90+ Highlighted";
+
+proc tabulate data=pg1.storm_final format=comma5.;
+	where Season>=2000;
+	var MaxWindMPH;
+	class BasinName;
+	class Season;
+	table Season={label=""} all={label="Total"}*{style={background=white}},
+		BasinName={LABEL="Basin"}*(MaxWindMPH={label=" "}*N={label="Number of Storms"}*{style={background=count.}} 
+		MaxWindMPH={label=" "}*Mean={label="Average Max Wind"}*{style={background=maxwind.}}) 
+		ALL={label="Total"  style={vjust=b}}*(MaxWindMPH={label=" "}*N={label="Number of Storms"} 
+		MaxWindMPH={label=" "}*Mean={label="Average Max Wind"})/style_precedence=row;
+run;
+title;
+footnote;
 
 
 
